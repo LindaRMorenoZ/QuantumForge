@@ -21,7 +21,7 @@ This roadmap describes the current development status and intended future work o
 - [x] Implement velocity interpolation for trajectory evaluation.
 - [x] Add validation for initial positions, spatial grids, evolution intervals, and numerical inputs.
 - [x] Add automated tests for trajectory integration and numerical behavior.
-- [ ] Validate trajectory evolution against analytical or independently established reference cases.
+- [x] Validate trajectory evolution against the analytical free 1D Gaussian wavepacket.
 - [ ] Develop systematic trajectory convergence tests.
 
 ## 3. Quantum experiments
