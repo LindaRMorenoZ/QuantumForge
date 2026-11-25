@@ -70,10 +70,7 @@ def test_integrates_constant_velocity_field_in_2d():
     dt = 0.01
     steps = 10
 
-    intervals = [
-        (wavefunction, wavefunction, wavefunction)
-        for _ in range(steps)
-    ]
+    intervals = [(wavefunction, wavefunction, wavefunction) for _ in range(steps)]
 
     integrator = BohmianTrajectoryIntegrator(
         mass=1.0,
@@ -114,9 +111,7 @@ def test_integrates_constant_velocity_field_in_3d():
     ky = 0.3
     kz = 0.2
 
-    psi = np.exp(
-        1j * (kx * x_grid + ky * y_grid + kz * z_grid)
-    )
+    psi = np.exp(1j * (kx * x_grid + ky * y_grid + kz * z_grid))
 
     wavefunction = WaveFunction(x=x, y=y, z=z, psi=psi)
 
@@ -124,19 +119,18 @@ def test_integrates_constant_velocity_field_in_3d():
     dy = y[1] - y[0]
     dz = z[1] - z[0]
 
-    velocity = np.array([
-        np.sinc(kx * dx / np.pi) * kx,
-        np.sinc(ky * dy / np.pi) * ky,
-        np.sinc(kz * dz / np.pi) * kz,
-    ])
+    velocity = np.array(
+        [
+            np.sinc(kx * dx / np.pi) * kx,
+            np.sinc(ky * dy / np.pi) * ky,
+            np.sinc(kz * dz / np.pi) * kz,
+        ]
+    )
 
     dt = 0.01
     steps = 10
 
-    intervals = [
-        (wavefunction, wavefunction, wavefunction)
-        for _ in range(steps)
-    ]
+    intervals = [(wavefunction, wavefunction, wavefunction) for _ in range(steps)]
 
     integrator = BohmianTrajectoryIntegrator(
         mass=1.0,
@@ -166,18 +160,13 @@ def test_integrates_constant_velocity_field_in_3d():
 def test_integrates_constant_velocity_field_in_4d():
     from quantumforge.dynamics.trajectory import BohmianTrajectoryIntegrator
 
-    coordinates = tuple(
-        np.linspace(-5.0, 5.0, 11) for _ in range(4)
-    )
+    coordinates = tuple(np.linspace(-5.0, 5.0, 11) for _ in range(4))
     grids = np.meshgrid(*reversed(coordinates), indexing="ij")
     spatial_grids = tuple(reversed(grids))
 
     wave_numbers = np.array([0.4, 0.3, 0.2, 0.1])
 
-    phase = sum(
-        k * grid
-        for k, grid in zip(wave_numbers, spatial_grids, strict=True)
-    )
+    phase = sum(k * grid for k, grid in zip(wave_numbers, spatial_grids, strict=True))
 
     psi = np.exp(1j * phase)
     wavefunction = WaveFunction(coordinates=coordinates, psi=psi)
@@ -188,10 +177,7 @@ def test_integrates_constant_velocity_field_in_4d():
     dt = 0.01
     steps = 5
 
-    intervals = [
-        (wavefunction, wavefunction, wavefunction)
-        for _ in range(steps)
-    ]
+    intervals = [(wavefunction, wavefunction, wavefunction) for _ in range(steps)]
 
     integrator = BohmianTrajectoryIntegrator(
         mass=1.0,
@@ -221,18 +207,13 @@ def test_integrates_constant_velocity_field_in_4d():
 def test_integrates_constant_velocity_field_in_5d():
     from quantumforge.dynamics.trajectory import BohmianTrajectoryIntegrator
 
-    coordinates = tuple(
-        np.linspace(-5.0, 5.0, 11) for _ in range(5)
-    )
+    coordinates = tuple(np.linspace(-5.0, 5.0, 11) for _ in range(5))
     grids = np.meshgrid(*reversed(coordinates), indexing="ij")
     spatial_grids = tuple(reversed(grids))
 
     wave_numbers = np.array([0.4, 0.3, 0.2, 0.1, 0.05])
 
-    phase = sum(
-        k * grid
-        for k, grid in zip(wave_numbers, spatial_grids, strict=True)
-    )
+    phase = sum(k * grid for k, grid in zip(wave_numbers, spatial_grids, strict=True))
 
     psi = np.exp(1j * phase)
     wavefunction = WaveFunction(coordinates=coordinates, psi=psi)
@@ -243,10 +224,7 @@ def test_integrates_constant_velocity_field_in_5d():
     dt = 0.01
     steps = 5
 
-    intervals = [
-        (wavefunction, wavefunction, wavefunction)
-        for _ in range(steps)
-    ]
+    intervals = [(wavefunction, wavefunction, wavefunction) for _ in range(steps)]
 
     integrator = BohmianTrajectoryIntegrator(
         mass=1.0,
@@ -381,3 +359,34 @@ def test_integrator_uses_interval_duration():
         ],
         atol=1e-10,
     )
+
+
+def test_accepts_si_scale_time_interval():
+    x = np.linspace(-1.0, 1.0, 5)
+    state = WaveFunction(x=x, psi=np.ones(5, dtype=complex))
+
+    interval = EvolutionInterval(
+        initial_state=state,
+        midpoint_state=state,
+        final_state=state,
+        t_start=0.0,
+        t_midpoint=8.65e-15,
+        t_end=1.73e-14,
+    )
+
+    assert interval.duration == pytest.approx(1.73e-14)
+
+
+def test_rejects_incorrect_si_scale_midpoint():
+    x = np.linspace(-1.0, 1.0, 5)
+    state = WaveFunction(x=x, psi=np.ones(5, dtype=complex))
+
+    with pytest.raises(ValueError, match="midpoint"):
+        EvolutionInterval(
+            initial_state=state,
+            midpoint_state=state,
+            final_state=state,
+            t_start=0.0,
+            t_midpoint=9.0e-15,
+            t_end=1.73e-14,
+        )

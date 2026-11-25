@@ -1,7 +1,7 @@
 """Reference-case validation for Bohmian trajectories."""
 
-
 import numpy as np
+import pytest
 
 from quantumforge.dynamics.interval import EvolutionInterval
 from quantumforge.dynamics.trajectory import BohmianTrajectoryIntegrator
@@ -20,9 +20,7 @@ def free_gaussian_trajectory(
     """Return the analytical Bohmian trajectory of a free Gaussian packet."""
     center = initial_center + (initial_momentum / mass) * time
 
-    spreading = np.sqrt(
-        1.0 + (hbar * time / (2.0 * mass * sigma**2)) ** 2
-    )
+    spreading = np.sqrt(1.0 + (hbar * time / (2.0 * mass * sigma**2)) ** 2)
 
     return center + (initial_position - initial_center) * spreading
 
@@ -46,11 +44,8 @@ def free_gaussian_wavefunction(
         (2.0 * np.pi * sigma**2) ** (-0.25)
         / np.sqrt(spreading)
         * np.exp(
-            -(x - center) ** 2 / (4.0 * sigma**2 * spreading)
-            + 1j
-            * initial_momentum
-            * (x - initial_momentum * time / (2.0 * mass))
-            / hbar
+            -((x - center) ** 2) / (4.0 * sigma**2 * spreading)
+            + 1j * initial_momentum * (x - initial_momentum * time / (2.0 * mass)) / hbar
         )
     )
 
@@ -105,7 +100,7 @@ def test_free_gaussian_trajectory_spreads_away_from_center():
 
     final_distance = abs(final_position - initial_center)
 
-    assert final_distance > initial_distance 
+    assert final_distance > initial_distance
 
 
 def test_bohmian_integrator_matches_free_gaussian_reference():
@@ -133,15 +128,9 @@ def test_bohmian_integrator_matches_free_gaussian_reference():
 
         intervals.append(
             EvolutionInterval(
-                initial_state=free_gaussian_wavefunction(
-                    x, t_start, mass, hbar, sigma
-                ),
-                midpoint_state=free_gaussian_wavefunction(
-                    x, t_midpoint, mass, hbar, sigma
-                ),
-                final_state=free_gaussian_wavefunction(
-                    x, t_end, mass, hbar, sigma
-                ),
+                initial_state=free_gaussian_wavefunction(x, t_start, mass, hbar, sigma),
+                midpoint_state=free_gaussian_wavefunction(x, t_midpoint, mass, hbar, sigma),
+                final_state=free_gaussian_wavefunction(x, t_end, mass, hbar, sigma),
                 t_start=t_start,
                 t_midpoint=t_midpoint,
                 t_end=t_end,
@@ -198,15 +187,27 @@ def test_bohmian_integrator_matches_moving_gaussian_reference():
         intervals.append(
             EvolutionInterval(
                 initial_state=free_gaussian_wavefunction(
-                    x, t_start, mass, hbar, sigma,
+                    x,
+                    t_start,
+                    mass,
+                    hbar,
+                    sigma,
                     initial_momentum=initial_momentum,
                 ),
                 midpoint_state=free_gaussian_wavefunction(
-                    x, t_midpoint, mass, hbar, sigma,
+                    x,
+                    t_midpoint,
+                    mass,
+                    hbar,
+                    sigma,
                     initial_momentum=initial_momentum,
                 ),
                 final_state=free_gaussian_wavefunction(
-                    x, t_end, mass, hbar, sigma,
+                    x,
+                    t_end,
+                    mass,
+                    hbar,
+                    sigma,
                     initial_momentum=initial_momentum,
                 ),
                 t_start=t_start,
@@ -220,9 +221,7 @@ def test_bohmian_integrator_matches_moving_gaussian_reference():
         intervals=intervals,
     )
 
-    expected_final_position = (
-        initial_position + initial_momentum * steps * dt / mass
-    )
+    expected_final_position = initial_position + initial_momentum * steps * dt / mass
 
     np.testing.assert_allclose(
         trajectory[-1],
@@ -260,15 +259,9 @@ def test_bohmian_integrator_temporal_convergence():
 
             intervals.append(
                 EvolutionInterval(
-                    initial_state=free_gaussian_wavefunction(
-                        x, t_start, mass, hbar, sigma
-                    ),
-                    midpoint_state=free_gaussian_wavefunction(
-                        x, t_midpoint, mass, hbar, sigma
-                    ),
-                    final_state=free_gaussian_wavefunction(
-                        x, t_end, mass, hbar, sigma
-                    ),
+                    initial_state=free_gaussian_wavefunction(x, t_start, mass, hbar, sigma),
+                    midpoint_state=free_gaussian_wavefunction(x, t_midpoint, mass, hbar, sigma),
+                    final_state=free_gaussian_wavefunction(x, t_end, mass, hbar, sigma),
                     t_start=t_start,
                     t_midpoint=t_midpoint,
                     t_end=t_end,
@@ -339,15 +332,9 @@ def measure_free_gaussian_trajectory_signed_error(
 
         intervals.append(
             EvolutionInterval(
-                initial_state=free_gaussian_wavefunction(
-                    x, t_start, mass, hbar, sigma
-                ),
-                midpoint_state=free_gaussian_wavefunction(
-                    x, t_midpoint, mass, hbar, sigma
-                ),
-                final_state=free_gaussian_wavefunction(
-                    x, t_end, mass, hbar, sigma
-                ),
+                initial_state=free_gaussian_wavefunction(x, t_start, mass, hbar, sigma),
+                midpoint_state=free_gaussian_wavefunction(x, t_midpoint, mass, hbar, sigma),
+                final_state=free_gaussian_wavefunction(x, t_end, mass, hbar, sigma),
                 t_start=t_start,
                 t_midpoint=t_midpoint,
                 t_end=t_end,
@@ -385,10 +372,7 @@ def free_gaussian_bohmian_velocity(
     tau = 2.0 * mass * sigma**2 / hbar
     center = initial_center + initial_momentum * time / mass
 
-    return (
-        initial_momentum / mass
-        + (position - center) * time / (tau**2 + time**2)
-    )
+    return initial_momentum / mass + (position - center) * time / (tau**2 + time**2)
 
 
 def integrate_analytical_bohmian_velocity(
@@ -442,21 +426,14 @@ def test_bohmian_integrator_error_decreases_with_temporal_refinement():
 
     time_steps = (0.04, 0.02, 0.01, 0.005)
 
-    errors = [
-        measure_free_gaussian_trajectory_error(dt)
-        for dt in time_steps
-    ]
+    errors = [measure_free_gaussian_trajectory_error(dt) for dt in time_steps]
 
     convergence_orders = [
-        np.log(errors[index] / errors[index + 1]) / np.log(2.0)
-        for index in range(len(errors) - 1)
+        np.log(errors[index] / errors[index + 1]) / np.log(2.0) for index in range(len(errors) - 1)
     ]
 
     assert all(error > 0.0 for error in errors)
-    assert all(
-        convergence_orders[index + 1] > 0.0
-        for index in range(len(convergence_orders) - 1)
-    )
+    assert all(convergence_orders[index + 1] > 0.0 for index in range(len(convergence_orders) - 1))
 
 
 def test_analytical_bohmian_velocity_shows_third_order_convergence():
@@ -465,9 +442,7 @@ def test_analytical_bohmian_velocity_shows_third_order_convergence():
     final_time = 0.2
     time_steps = (0.04, 0.02, 0.01, 0.005)
 
-    exact_position = initial_position * np.sqrt(
-        1.0 + (final_time / 2.0) ** 2
-    )
+    exact_position = initial_position * np.sqrt(1.0 + (final_time / 2.0) ** 2)
 
     errors = []
 
@@ -480,8 +455,7 @@ def test_analytical_bohmian_velocity_shows_third_order_convergence():
         errors.append(abs(numerical_position - exact_position))
 
     convergence_orders = [
-        np.log(errors[index] / errors[index + 1]) / np.log(2.0)
-        for index in range(len(errors) - 1)
+        np.log(errors[index] / errors[index + 1]) / np.log(2.0) for index in range(len(errors) - 1)
     ]
 
     assert all(errors[index + 1] < errors[index] for index in range(len(errors) - 1))
@@ -552,14 +526,11 @@ def test_bohmian_integrator_temporal_convergence_with_analytical_velocity(
         integrator = BohmianTrajectoryIntegrator(mass=1.0, dt=dt)
         trajectory = integrator.integrate(initial_position, intervals)
 
-        exact_position = initial_position * np.sqrt(
-            1.0 + (final_time / 2.0) ** 2
-        )
+        exact_position = initial_position * np.sqrt(1.0 + (final_time / 2.0) ** 2)
         errors.append(abs(trajectory[-1] - exact_position))
 
     convergence_orders = [
-        np.log(errors[index] / errors[index + 1]) / np.log(2.0)
-        for index in range(len(errors) - 1)
+        np.log(errors[index] / errors[index + 1]) / np.log(2.0) for index in range(len(errors) - 1)
     ]
 
     assert all(errors[index + 1] < errors[index] for index in range(len(errors) - 1))
@@ -581,16 +552,90 @@ def test_full_integrator_temporal_error_differences_are_third_order():
         ]
 
         error_differences = [
-            abs(errors[index] - errors[index + 1])
-            for index in range(len(errors) - 1)
+            abs(errors[index] - errors[index + 1]) for index in range(len(errors) - 1)
         ]
 
         convergence_orders = [
-            np.log(error_differences[index] / error_differences[index + 1])
-            / np.log(2.0)
+            np.log(error_differences[index] / error_differences[index + 1]) / np.log(2.0)
             for index in range(len(error_differences) - 1)
         ]
 
         assert all(difference > 0.0 for difference in error_differences)
         assert all(2.8 < order < 3.2 for order in convergence_orders)
 
+
+def test_bohmian_integrator_accepts_consecutive_si_time_intervals():
+    """Consecutive intervals at SI time scales must be accepted."""
+    mass = 1.0
+    hbar = 1.0
+    sigma = 1.0
+    dt = 1.73e-14
+
+    x = np.linspace(-15.0, 15.0, 3001)
+
+    intervals = []
+    for step in range(2):
+        t_start = step * dt
+        t_midpoint = t_start + dt / 2.0
+        t_end = t_start + dt
+
+        intervals.append(
+            EvolutionInterval(
+                initial_state=free_gaussian_wavefunction(x, t_start, mass, hbar, sigma),
+                midpoint_state=free_gaussian_wavefunction(x, t_midpoint, mass, hbar, sigma),
+                final_state=free_gaussian_wavefunction(x, t_end, mass, hbar, sigma),
+                t_start=t_start,
+                t_midpoint=t_midpoint,
+                t_end=t_end,
+            )
+        )
+
+    integrator = BohmianTrajectoryIntegrator(
+        mass=mass,
+        dt=dt,
+        hbar=hbar,
+    )
+
+    trajectory = integrator.integrate(
+        initial_position=1.0,
+        intervals=intervals,
+    )
+
+    assert trajectory.shape == (3,)
+    assert np.all(np.isfinite(trajectory))
+
+
+def test_bohmian_integrator_warns_on_si_scale_time_discontinuity():
+    """A real temporal gap at SI scales must trigger a warning."""
+    dt = 1.73e-14
+    gap = 1.0e-15
+    x = np.linspace(-15.0, 15.0, 3001)
+
+    intervals = []
+
+    for t_start in (0.0, dt + gap):
+        t_midpoint = t_start + dt / 2.0
+        t_end = t_start + dt
+
+        intervals.append(
+            EvolutionInterval(
+                initial_state=free_gaussian_wavefunction(x, t_start),
+                midpoint_state=free_gaussian_wavefunction(x, t_midpoint),
+                final_state=free_gaussian_wavefunction(x, t_end),
+                t_start=t_start,
+                t_midpoint=t_midpoint,
+                t_end=t_end,
+            )
+        )
+
+    integrator = BohmianTrajectoryIntegrator(
+        mass=1.0,
+        dt=dt,
+        hbar=1.0,
+    )
+
+    with pytest.warns(RuntimeWarning, match="not temporally continuous"):
+        integrator.integrate(
+            initial_position=1.0,
+            intervals=intervals,
+        )

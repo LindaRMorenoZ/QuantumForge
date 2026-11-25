@@ -13,6 +13,9 @@ This roadmap describes the current development status and intended future work o
 - [x] Implement the one-dimensional Hamiltonian operator.
 - [x] Implement a one-dimensional Crank–Nicolson Schrödinger solver.
 - [x] Validate norm preservation, boundary conditions, eigenstate evolution, and temporal convergence.
+- [x] Validate free Gaussian wave-packet evolution against its analytical solution.
+- [x] Validate probability conservation and analytical wave-packet spreading in SI units.
+- [x] Verify second-order temporal and spatial convergence for free Gaussian evolution.
 
 ## 2. Bohmian dynamics
 
@@ -23,10 +26,14 @@ This roadmap describes the current development status and intended future work o
 - [x] Add automated tests for trajectory integration and numerical behavior.
 - [x] Validate trajectory evolution against the analytical free 1D Gaussian wavepacket.
 - [x] Develop systematic trajectory convergence tests.
+- [x] Validate SI-scale temporal intervals and continuity handling.
+- [x] Validate the connection between Schrödinger evolution intervals and Bohmian trajectory integration for a free Gaussian wavepacket.
 
 ## 3. Quantum experiments
 
-- [ ] Add free-particle Gaussian wave-packet experiments.
+- [x] Establish an analytical reference for free-particle Gaussian wave-packet evolution.
+- [x] Validate the free Gaussian wave-packet as a computational benchmark for the Schrödinger solver and Bohmian trajectory integrator.
+- [ ] Develop a reproducible free-particle Gaussian wave-packet experiment.
 - [ ] Add coherent superpositions and interference experiments.
 - [ ] Add a double-slit model after the preceding components are validated.
 
@@ -45,4 +52,3 @@ This roadmap describes the current development status and intended future work o
 - [ ] Explore additional numerical methods after the foundations are stable.
 
 This roadmap is subject to revision as the computational laboratory develops. Theoretical explanations, mathematical derivations, and educational material belong to the separate Fundamental Physics platform.
-

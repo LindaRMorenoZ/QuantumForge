@@ -1,4 +1,3 @@
-
 """Bohmian trajectory integration."""
 
 import warnings
@@ -59,9 +58,7 @@ class BohmianTrajectoryIntegrator:
 
         for wavefunction in (midpoint, next_state):
             if wavefunction.ndim != current.ndim:
-                raise ValueError(
-                    "Wavefunctions in an interval must have the same dimension."
-                )
+                raise ValueError("Wavefunctions in an interval must have the same dimension.")
 
             for axis, reference_axis in zip(
                 wavefunction.coordinates,
@@ -69,9 +66,7 @@ class BohmianTrajectoryIntegrator:
                 strict=True,
             ):
                 if not np.array_equal(axis, reference_axis):
-                    raise ValueError(
-                        "Wavefunctions in an interval must share the same grid."
-                    )
+                    raise ValueError("Wavefunctions in an interval must share the same grid.")
 
         coordinates = current.coordinates
 
@@ -82,9 +77,7 @@ class BohmianTrajectoryIntegrator:
                 strict=True,
             ):
                 if not np.array_equal(axis, reference_axis):
-                    raise ValueError(
-                        "All evolution intervals must share the same spatial grid."
-                    )
+                    raise ValueError("All evolution intervals must share the same spatial grid.")
 
         return coordinates
 
@@ -100,9 +93,7 @@ class BohmianTrajectoryIntegrator:
             position = position.reshape(1)
 
         if position.shape != (ndim,):
-            raise ValueError(
-                f"Position must contain exactly {ndim} coordinate values."
-            )
+            raise ValueError(f"Position must contain exactly {ndim} coordinate values.")
 
         if not np.all(np.isfinite(position)):
             raise ValueError("Initial position must be finite.")
@@ -127,9 +118,7 @@ class BohmianTrajectoryIntegrator:
     def _validate_inputs(
         self,
         initial_position: float | tuple[float, ...] | np.ndarray,
-        intervals: list[
-            EvolutionInterval | tuple[WaveFunction, WaveFunction, WaveFunction]
-        ],
+        intervals: list[EvolutionInterval | tuple[WaveFunction, WaveFunction, WaveFunction]],
     ) -> tuple[np.ndarray, tuple[np.ndarray, ...]]:
         """Validate integration inputs and return position and spatial grid."""
         if not isinstance(intervals, list):
@@ -147,9 +136,7 @@ class BohmianTrajectoryIntegrator:
             raise ValueError("Initial position must lie inside the spatial domain.")
 
         previous_end_time = (
-            intervals[0].t_end
-            if isinstance(intervals[0], EvolutionInterval)
-            else None
+            intervals[0].t_end if isinstance(intervals[0], EvolutionInterval) else None
         )
 
         for interval in intervals[1:]:
@@ -157,12 +144,14 @@ class BohmianTrajectoryIntegrator:
 
             if isinstance(interval, EvolutionInterval):
                 if previous_end_time is not None:
-                    if not np.isclose(
-                        interval.t_start,
-                        previous_end_time,
-                        rtol=1e-10,
-                        atol=1e-12,
-                    ):
+                    time_scale = max(
+                        abs(interval.t_start),
+                        abs(previous_end_time),
+                        interval.duration,
+                        np.finfo(float).tiny,
+                    )
+
+                    if abs(interval.t_start - previous_end_time) > 1e-10 * time_scale:
                         warnings.warn(
                             "Evolution intervals are not temporally continuous. "
                             "The trajectory will be integrated across independent "
@@ -176,7 +165,7 @@ class BohmianTrajectoryIntegrator:
                 previous_end_time = None
 
         return position, reference_coordinates
- 
+
     def _velocity_at(
         self,
         wavefunction: WaveFunction,
@@ -192,9 +181,7 @@ class BohmianTrajectoryIntegrator:
             hbar=self.hbar,
         )
 
-        interpolation_position = (
-            float(position[0]) if wavefunction.ndim == 1 else position
-        )
+        interpolation_position = float(position[0]) if wavefunction.ndim == 1 else position
 
         result = interpolate_velocity(
             wavefunction,
@@ -205,9 +192,7 @@ class BohmianTrajectoryIntegrator:
         result = np.atleast_1d(np.asarray(result, dtype=float))
 
         if result.shape != position.shape or not np.all(np.isfinite(result)):
-            raise RuntimeError(
-                f"Undefined Bohmian velocity at position {position}."
-            )
+            raise RuntimeError(f"Undefined Bohmian velocity at position {position}.")
 
         return result
 
@@ -239,18 +224,15 @@ class BohmianTrajectoryIntegrator:
 
         if not self._validate_domain(next_position, current.coordinates):
             raise RuntimeError(
-                f"Trajectory left the spatial domain at step "
-                f"{step_index}: {next_position}."
+                f"Trajectory left the spatial domain at step {step_index}: {next_position}."
             )
 
         return next_position
-    
+
     def integrate(
         self,
         initial_position: float | tuple[float, ...] | np.ndarray,
-        intervals: list[
-            EvolutionInterval | tuple[WaveFunction, WaveFunction, WaveFunction]
-        ],
+        intervals: list[EvolutionInterval | tuple[WaveFunction, WaveFunction, WaveFunction]],
     ) -> np.ndarray:
         """Integrate a Bohmian trajectory using the midpoint method.
 
@@ -300,6 +282,5 @@ class BohmianTrajectoryIntegrator:
 
         return positions
 
+
 BohmianTrajectoryIntegrator1D = BohmianTrajectoryIntegrator
-
-

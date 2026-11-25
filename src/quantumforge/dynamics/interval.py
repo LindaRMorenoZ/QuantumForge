@@ -45,16 +45,16 @@ class EvolutionInterval:
 
         if not self.t_start < self.t_midpoint < self.t_end:
             raise ValueError("Interval times must be strictly increasing.")
-        expected_midpoint = self.t_start + self.duration / 2.0
+        expected_midpoint = 0.5 * (self.t_start + self.t_end)
+        time_scale = max(
+            abs(self.t_start),
+            abs(self.t_end),
+            self.duration,
+        )
 
-        if not np.isclose(
-            self.t_midpoint,
-            expected_midpoint,
-            rtol=1e-10,
-            atol=1e-12,
-        ):
+        if abs(self.t_midpoint - expected_midpoint) > 1e-10 * time_scale:
             raise ValueError(
-                "The midpoint time must be halfway between the interval endpoints."
+                "The midpoint time must be halfway between the start and end times."
             )
         
         if len({state.ndim for state in states}) != 1:

@@ -1,12 +1,13 @@
-
 from unittest.mock import patch
 
 import numpy as np
 import pytest
+from analytic_references import free_gaussian_wavefunction
 from scipy.sparse.linalg._dsolve import factorized
 
 import quantumforge.numerics.schrodinger as schrodinger_module
 from quantumforge.numerics.schrodinger import SchrodingerSolver
+from quantumforge.physics.constants import SI_CONSTANTS
 from quantumforge.physics.potential import Potential
 from quantumforge.physics.wavefunction import WaveFunction
 
@@ -66,8 +67,7 @@ def test_crank_nicolson_preserves_probability_norm():
 
     solver = SchrodingerSolver(
         mass=1.0,
-        potential=Potential(values=0.5 * wavefunction.x**2,
-                            x=wavefunction.x),
+        potential=Potential(values=0.5 * wavefunction.x**2, x=wavefunction.x),
         dt=0.001,
         hbar=1.0,
     )
@@ -287,13 +287,13 @@ def test_crank_nicolson_has_second_order_temporal_convergence():
         coarse_error / fine_error,
         4.0,
         rtol=0.02,
-    )    
+    )
 
 
 def test_schrodinger_solver_is_available_from_numerics_package():
     from quantumforge.numerics import SchrodingerSolver as PublicSolver
 
-    assert PublicSolver is SchrodingerSolver  
+    assert PublicSolver is SchrodingerSolver
 
 
 def test_two_half_steps_match_one_full_step():
@@ -355,7 +355,7 @@ def test_evolve_states_returns_all_time_steps():
         expected.psi,
         rtol=1e-12,
         atol=1e-14,
-    )    
+    )
 
 
 def test_midpoint_matches_half_time_step_evolution():
@@ -513,3 +513,261 @@ def test_evolve_with_midpoints_factorizes_each_time_step_once():
     assert mocked_factorized.call_count == 2
 
 
+def test_free_gaussian_evolution_preserves_probability_in_si_units():
+
+    mass = SI_CONSTANTS.electron_mass
+    hbar = SI_CONSTANTS.hbar
+    sigma = 1e-9
+
+    characteristic_time = 2.0 * mass * sigma**2 / hbar
+    dt = characteristic_time / 100.0
+
+    x = np.linspace(-12.0 * sigma, 12.0 * sigma, 4801)
+
+    initial = free_gaussian_wavefunction(
+        x=x,
+        time=0.0,
+        mass=mass,
+        sigma=sigma,
+    )
+
+    initial_psi = initial.psi.copy()
+    initial_psi[[0, -1]] = 0.0
+
+    initial = WaveFunction(x=x, psi=initial_psi)
+    initial_probability = np.trapezoid(initial.density, x)
+
+    solver = SchrodingerSolver(
+        mass=mass,
+        potential=Potential(values=0.0),
+        dt=dt,
+        hbar=hbar,
+    )
+
+    final = solver.evolve(initial, steps=100)
+    final_probability = np.trapezoid(final.density, x)
+
+    assert final_probability == pytest.approx(
+        initial_probability,
+        rel=1e-8,
+    )
+
+
+def test_free_gaussian_evolution_matches_analytical_width_in_si_units():
+    mass = SI_CONSTANTS.electron_mass
+    hbar = SI_CONSTANTS.hbar
+    sigma = 1e-9
+
+    characteristic_time = 2.0 * mass * sigma**2 / hbar
+    dt = characteristic_time / 100.0
+
+    x = np.linspace(-12.0 * sigma, 12.0 * sigma, 4801)
+
+    initial = free_gaussian_wavefunction(
+        x=x,
+        time=0.0,
+        mass=mass,
+        sigma=sigma,
+    )
+
+    initial_psi = initial.psi.copy()
+    initial_psi[[0, -1]] = 0.0
+    initial = WaveFunction(x=x, psi=initial_psi)
+
+    solver = SchrodingerSolver(
+        mass=mass,
+        potential=Potential(values=0.0),
+        dt=dt,
+        hbar=hbar,
+    )
+
+    final = solver.evolve(initial, steps=100)
+
+    probability = np.trapezoid(final.density, x)
+    mean = np.trapezoid(x * final.density, x) / probability
+    variance = np.trapezoid((x - mean) ** 2 * final.density, x) / probability
+
+    numerical_width = np.sqrt(variance)
+    analytical_width = np.sqrt(2.0) * sigma
+
+    assert numerical_width == pytest.approx(
+        analytical_width,
+        rel=1e-3,
+    )
+
+
+def test_free_gaussian_evolution_matches_analytical_wavefunction():
+    mass = SI_CONSTANTS.electron_mass
+    hbar = SI_CONSTANTS.hbar
+    sigma = 1e-9
+
+    characteristic_time = 2.0 * mass * sigma**2 / hbar
+    dt = characteristic_time / 100.0
+
+    x = np.linspace(-12.0 * sigma, 12.0 * sigma, 4801)
+
+    initial = free_gaussian_wavefunction(
+        x=x,
+        time=0.0,
+        mass=mass,
+        sigma=sigma,
+    )
+
+    initial_psi = initial.psi.copy()
+    initial_psi[[0, -1]] = 0.0
+    initial = WaveFunction(x=x, psi=initial_psi)
+
+    solver = SchrodingerSolver(
+        mass=mass,
+        potential=Potential(values=0.0),
+        dt=dt,
+        hbar=hbar,
+    )
+
+    numerical = solver.evolve(initial, steps=100)
+    analytical = free_gaussian_wavefunction(
+        x=x,
+        time=characteristic_time,
+        mass=mass,
+        sigma=sigma,
+    )
+
+    overlap = np.trapezoid(
+        np.conjugate(analytical.psi) * numerical.psi,
+        x,
+    )
+    phase = np.angle(overlap)
+
+    aligned_numerical = numerical.psi * np.exp(-1j * phase)
+
+    error = np.sqrt(
+        np.trapezoid(
+            np.abs(aligned_numerical - analytical.psi) ** 2,
+            x,
+        )
+    )
+    reference_norm = np.sqrt(np.trapezoid(analytical.density, x))
+
+    relative_error = error / reference_norm
+
+    assert relative_error < 1e-3
+
+
+def test_free_gaussian_evolution_has_second_order_temporal_convergence():
+    mass = SI_CONSTANTS.electron_mass
+    hbar = SI_CONSTANTS.hbar
+    sigma = 1e-9
+
+    characteristic_time = 2.0 * mass * sigma**2 / hbar
+    x = np.linspace(-12.0 * sigma, 12.0 * sigma, 4801)
+
+    initial = free_gaussian_wavefunction(
+        x=x,
+        time=0.0,
+        mass=mass,
+        sigma=sigma,
+    )
+
+    initial_psi = initial.psi.copy()
+    initial_psi[[0, -1]] = 0.0
+    initial = WaveFunction(x=x, psi=initial_psi)
+
+    analytical = free_gaussian_wavefunction(
+        x=x,
+        time=characteristic_time,
+        mass=mass,
+        sigma=sigma,
+    )
+
+    errors = []
+
+    for subdivisions in (50, 100, 200):
+        dt = characteristic_time / subdivisions
+
+        solver = SchrodingerSolver(
+            mass=mass,
+            potential=Potential(values=0.0),
+            dt=dt,
+            hbar=hbar,
+        )
+
+        numerical = solver.evolve(initial, steps=subdivisions)
+
+        overlap = np.trapezoid(
+            np.conjugate(analytical.psi) * numerical.psi,
+            x,
+        )
+        phase = np.angle(overlap)
+        aligned = numerical.psi * np.exp(-1j * phase)
+
+        error = np.sqrt(
+            np.trapezoid(
+                np.abs(aligned - analytical.psi) ** 2,
+                x,
+            )
+        )
+        errors.append(error)
+
+    coarse_ratio = errors[0] / errors[1]
+    fine_ratio = errors[1] / errors[2]
+
+    assert coarse_ratio > 3.0
+    assert fine_ratio > 3.0
+
+
+def test_free_gaussian_evolution_has_second_order_spatial_convergence():
+    mass = SI_CONSTANTS.electron_mass
+    hbar = SI_CONSTANTS.hbar
+    sigma = 1e-9
+
+    characteristic_time = 2.0 * mass * sigma**2 / hbar
+    subdivisions = 1600
+    dt = characteristic_time / subdivisions
+
+    errors = []
+
+    for points in (1201, 2401, 4801):
+        x = np.linspace(-12.0 * sigma, 12.0 * sigma, points)
+
+        initial = free_gaussian_wavefunction(
+            x=x,
+            time=0.0,
+            mass=mass,
+            sigma=sigma,
+        )
+
+        initial_psi = initial.psi.copy()
+        initial_psi[[0, -1]] = 0.0
+        initial = WaveFunction(x=x, psi=initial_psi)
+
+        solver = SchrodingerSolver(
+            mass=mass,
+            potential=Potential(values=0.0),
+            dt=dt,
+            hbar=hbar,
+        )
+
+        numerical = solver.evolve(initial, steps=subdivisions)
+
+        analytical = free_gaussian_wavefunction(
+            x=x,
+            time=characteristic_time,
+            mass=mass,
+            sigma=sigma,
+        )
+
+        overlap = np.trapezoid(
+            np.conjugate(analytical.psi) * numerical.psi,
+            x,
+        )
+        phase = np.angle(overlap)
+        aligned = numerical.psi * np.exp(-1j * phase)
+
+        error = np.sqrt(np.trapezoid(np.abs(aligned - analytical.psi) ** 2, x))
+        errors.append(error)
+
+    coarse_ratio = errors[0] / errors[1]
+    fine_ratio = errors[1] / errors[2]
+
+    assert coarse_ratio > 3.0
+    assert fine_ratio > 3.0
