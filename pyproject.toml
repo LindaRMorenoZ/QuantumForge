@@ -1,3 +1,4 @@
+
 [build-system]
 requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
@@ -5,10 +6,9 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "quantumforge"
 version = "0.1.0"
-description = "A computational laboratory for quantum systems, initially using Bohmian mechanics."
+description = "A computational laboratory for quantum dynamics and Bohmian trajectories."
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "License to be decided" }
 authors = [
     { name = "QuantumForge contributors" }
 ]
@@ -35,8 +35,9 @@ python_files = ["test_*.py"]
 addopts = "-ra"
 
 [tool.ruff]
-line-length = 88
+line-length = 100
 target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
+
