@@ -22,7 +22,7 @@ This roadmap describes the current development status and intended future work o
 - [x] Add validation for initial positions, spatial grids, evolution intervals, and numerical inputs.
 - [x] Add automated tests for trajectory integration and numerical behavior.
 - [x] Validate trajectory evolution against the analytical free 1D Gaussian wavepacket.
-- [ ] Develop systematic trajectory convergence tests.
+- [x] Develop systematic trajectory convergence tests.
 
 ## 3. Quantum experiments
 

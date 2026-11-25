@@ -33,7 +33,8 @@ The current implementation is evolving toward a modular framework for computatio
 - One-dimensional Schrödinger time evolution using numerical integration methods.
 - Evolution intervals containing initial, midpoint, and final wavefunction states.
 - Bohmian trajectory integration using the midpoint method.
-- Trajectory integration in arbitrary spatial dimensions, subject to the supported numerical components.
+- Multidimensional Bohmian trajectory integration using interpolated velocity fields, subject to the supported wavefunction and numerical components.
+- Analytical validation of free-particle Gaussian trajectories and systematic convergence tests for the tested reference configuration.
 - Validation of physical parameters, spatial grids, and numerical inputs.
 
 ## Repository layout
@@ -64,15 +65,17 @@ pytest
 
 ## Development roadmap
 
-The development roadmap includes:
+The current development priorities are:
 
-1. Expand and validate the numerical physics foundations.
+1. Expand and further validate the numerical physics foundations.
 2. Extend Schrödinger evolution beyond the current one-dimensional implementation.
 3. Develop and validate multidimensional quantum dynamics.
-4. Improve trajectory integration, numerical stability, and convergence analysis.
-5. Develop reproducible computational experiments.
+4. Investigate trajectory integration accuracy and numerical stability across additional physical systems.
+5. Develop reproducible computational experiments, starting with free-particle Gaussian wave packets.
 6. Implement visualization tools for wavefunctions, probability distributions, velocity fields, and trajectories.
-7. Expand numerical tests and physical validation benchmarks.
+7. Expand numerical tests and analytical validation benchmarks.
+
+The initial Bohmian trajectory integration framework, analytical free-Gaussian reference validation, and systematic convergence tests for the tested configuration are implemented. Further validation across different physical systems and numerical configurations remains part of the development process.
 
 ## Scope
 
