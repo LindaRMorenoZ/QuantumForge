@@ -140,25 +140,23 @@ class Potential:
         """Return whether the potential is spatially constant."""
         return self.ndim == 0
 
-    def validate_compatibility(self, wavefunction: WaveFunction) -> None:
-        """Validate compatibility with a wavefunction's spatial grid.
-
-        A spatially constant potential is compatible with any
-        wavefunction. Grid-based potentials must have matching
-        dimensions and coordinates.
-        """
+    def validate_coordinates(
+        self,
+        coordinates: tuple[np.ndarray, ...],
+    ) -> None:
+        """Validate compatibility with spatial coordinates."""
         if self.is_spatially_constant:
             return
 
-        if self.ndim != wavefunction.ndim:
+        if self.ndim != len(coordinates):
             raise ValueError(
                 "Potential and wavefunction dimensions must match."
             )
 
-        for index, (potential_axis, wavefunction_axis) in enumerate(
-            zip(self.coordinates, wavefunction.coordinates, strict=True)
+        for index, (potential_axis, axis) in enumerate(
+            zip(self.coordinates, coordinates, strict=True)
         ):
-            if not np.array_equal(potential_axis, wavefunction_axis):
+            if not np.array_equal(potential_axis, axis):
                 if index == 0:
                     axis_name = "x"
                 elif index == 1:
@@ -172,4 +170,6 @@ class Potential:
                     f"Potential and wavefunction {axis_name} coordinates must match."
                 )
 
-    
+    def validate_compatibility(self, wavefunction: WaveFunction) -> None:
+        """Validate compatibility with a wavefunction."""
+        self.validate_coordinates(wavefunction.coordinates)

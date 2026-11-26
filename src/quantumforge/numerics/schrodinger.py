@@ -1,6 +1,5 @@
 
-
-"""Time evolution of one-dimensional wavefunctions."""
+"""Time evolution of multidimensional wavefunctions."""
 
 from dataclasses import dataclass
 
@@ -9,7 +8,7 @@ from scipy.sparse import eye
 from scipy.sparse.linalg import factorized
 
 from quantumforge.dynamics.interval import EvolutionInterval
-from quantumforge.numerics.operators import hamiltonian_1d
+from quantumforge.numerics.operators import hamiltonian_nd
 from quantumforge.physics.constants import SI_CONSTANTS
 from quantumforge.physics.potential import Potential
 from quantumforge.physics.wavefunction import WaveFunction
@@ -17,11 +16,11 @@ from quantumforge.physics.wavefunction import WaveFunction
 
 @dataclass(frozen=True)
 class SchrodingerSolver:
-    """Evolve a 1D wavefunction using the Crank-Nicolson method.
+    """Evolve multidimensional wavefunctions using the Crank-Nicolson method.
 
-    The solver assumes a time-independent, real potential and homogeneous
-    Dirichlet boundary conditions. The wavefunction is fixed to zero at
-    both endpoints of the spatial grid.
+    The solver supports arbitrary spatial dimensions and assumes a
+    time-independent, real potential with homogeneous Dirichlet boundary
+    conditions on every spatial boundary.
 
     The evolution is performed on interior grid points using a
     second-order finite-difference Hamiltonian.
@@ -48,15 +47,14 @@ class SchrodingerSolver:
     ):
         """Prepare the Crank-Nicolson operators for a given grid and time step."""
         time_step = self.dt if dt is None else dt
-        
+
         if not np.isfinite(time_step) or time_step <= 0:
             raise ValueError("dt must be a positive finite value.")
-                    
-        if wavefunction.ndim != 1:    
-            raise ValueError("SchrodingerSolver currently supports 1D only.")
 
-        hamiltonian = hamiltonian_1d(
-            x=wavefunction.x,
+        self.potential.validate_compatibility(wavefunction)
+
+        hamiltonian = hamiltonian_nd(
+            coordinates=wavefunction.coordinates,
             mass=self.mass,
             potential=self.potential,
             hbar=self.hbar,
@@ -80,15 +78,21 @@ class SchrodingerSolver:
         solve,
     ) -> WaveFunction:
         """Advance one time step using prepared operators."""
-        psi_interior = wavefunction.psi[1:-1]
+        interior_slices = tuple(
+            slice(1, -1) for _ in wavefunction.coordinates
+        )
+
+        psi_interior = wavefunction.psi[interior_slices].ravel()
 
         next_interior = solve(rhs @ psi_interior)
 
         next_psi = np.zeros_like(wavefunction.psi)
-        next_psi[1:-1] = next_interior
+        next_psi[interior_slices] = next_interior.reshape(
+            next_psi[interior_slices].shape
+        )
 
         return WaveFunction(
-            x=wavefunction.x,
+            coordinates=wavefunction.coordinates,
             psi=next_psi,
         )
 
@@ -134,7 +138,7 @@ class SchrodingerSolver:
         steps: int,
     ) -> WaveFunction:
         """Advance a wavefunction through multiple time steps."""
-        if not isinstance(steps, int) or steps < 0:
+        if not isinstance(steps, int) or isinstance(steps, bool) or steps < 0:
             raise ValueError("steps must be a non-negative integer.")
 
         if steps == 0:
@@ -148,7 +152,7 @@ class SchrodingerSolver:
             rhs,
             solve,
         )[-1]
-    
+
     def evolve_states(
         self,
         wavefunction: WaveFunction,

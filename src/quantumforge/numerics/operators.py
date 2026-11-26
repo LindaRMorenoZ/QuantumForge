@@ -8,8 +8,25 @@ from scipy.sparse import diags, kronsum
 
 from quantumforge.physics.constants import SI_CONSTANTS
 from quantumforge.physics.potential import Potential
-from quantumforge.physics.wavefunction import WaveFunction
 
+
+def _validate_physical_parameters(mass: float, hbar: float) -> None:
+    """Validate mass and reduced Planck constant."""
+    if (
+        not isinstance(mass, (int, float, np.integer, np.floating))
+        or isinstance(mass, (bool, np.bool_))
+        or not np.isfinite(mass)
+        or mass <= 0
+    ):
+        raise ValueError("mass must be a positive finite real value.")
+
+    if (
+        not isinstance(hbar, (int, float, np.integer, np.floating))
+        or isinstance(hbar, (bool, np.bool_))
+        or not np.isfinite(hbar)
+        or hbar <= 0
+    ):
+        raise ValueError("hbar must be a positive finite real value.")
 
 def laplacian_1d(x: np.ndarray):
     """Construct the 1D finite-difference Laplacian.
@@ -34,7 +51,7 @@ def laplacian_1d(x: np.ndarray):
 
     dx = differences[0]
 
-    if not np.allclose(differences, dx):
+    if not np.allclose(differences, dx, rtol=1e-10, atol=1e-14):
         raise ValueError("x must be uniformly spaced.")
 
     number_of_interior_points = x.size - 2
@@ -89,23 +106,10 @@ def hamiltonian_1d(
     Homogeneous Dirichlet boundary conditions are assumed.
     The Hamiltonian acts on interior grid points only.
     """
-    if not np.isfinite(mass) or mass <= 0:
-        raise ValueError("mass must be a positive finite value.")
-
-    if not np.isfinite(hbar) or hbar <= 0:
-        raise ValueError("hbar must be a positive finite value.")
-
+    _validate_physical_parameters(mass, hbar)
     x = np.asarray(x, dtype=float)
 
-    if x.ndim != 1 or x.size < 3:
-        raise ValueError("x must contain at least three grid points.")
-
-    # Validate compatibility using a dummy wavefunction.
-    reference_wavefunction = WaveFunction(
-        x=x,
-        psi=np.ones(x.size, dtype=complex),
-    )
-    potential.validate_compatibility(reference_wavefunction)
+    potential.validate_coordinates((x,))
 
     if potential.is_spatially_constant:
         potential_values = np.full(x.size, potential.values)
@@ -124,7 +128,6 @@ def hamiltonian_1d(
 
     return kinetic + potential_operator
 
-
 def hamiltonian_nd(
     coordinates: tuple[np.ndarray, ...],
     mass: float,
@@ -141,24 +144,16 @@ def hamiltonian_nd(
 
     Coordinates are provided in the order (x, y, z, ...).
     """
-    if not np.isfinite(mass) or mass <= 0:
-        raise ValueError("mass must be a positive finite value.")
+    _validate_physical_parameters(mass, hbar)
 
-    if not np.isfinite(hbar) or hbar <= 0:
-        raise ValueError("hbar must be a positive finite value.")
-
-    reference_shape = tuple(
-        axis.size for axis in reversed(coordinates)
+    potential.validate_coordinates(coordinates)
+    coordinates = tuple(
+        np.asarray(axis, dtype=float) for axis in coordinates
     )
-
-    reference_wavefunction = WaveFunction(
-        coordinates=coordinates,
-        psi=np.ones(reference_shape, dtype=complex),
-    )
-    potential.validate_compatibility(reference_wavefunction)
 
     if potential.is_spatially_constant:
-        potential_values = np.full(reference_shape, potential.values)
+        shape = tuple(axis.size for axis in reversed(coordinates))
+        potential_values = np.full(shape, potential.values)
     else:
         potential_values = potential.values
 

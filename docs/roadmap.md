@@ -33,15 +33,20 @@ This roadmap describes the current development status and intended future work o
 
 - [x] Establish an analytical reference for free-particle Gaussian wave-packet evolution.
 - [x] Validate the free Gaussian wave-packet as a computational benchmark for the Schrödinger solver and Bohmian trajectory integrator.
-- [ ] Develop a reproducible free-particle Gaussian wave-packet experiment.
+- [x] Develop a reproducible free-particle Gaussian wave-packet experiment.
+- [x] Develop a reproducible quantum harmonic oscillator experiment.
+- [x] Validate stationary-state densities, probability conservation, Bohmian trajectories, and energy conservation for the ground and first excited states.
 - [ ] Add coherent superpositions and interference experiments.
 - [ ] Add a double-slit model after the preceding components are validated.
 
 ## 4. Higher-dimensional extensions
 
-- [ ] Generalize spatial operators and Schrödinger evolution to two dimensions.
-- [ ] Validate two-dimensional probability density and current evolution.
+- [x] Generalize spatial operators and Hamiltonian construction to arbitrary dimensions.
+- [x] Generalize Schrödinger evolution to two and three dimensions.
+- [x] Validate multidimensional Hamiltonian construction, coordinate ordering, and spatially varying potentials.
+- [x] Validate the three-dimensional harmonic oscillator ground-state energy against its analytical reference, confirming second-order spatial convergence.
 - [x] Implement multidimensional Bohmian trajectory integration.
+- [ ] Validate multidimensional probability density and current evolution.
 - [ ] Validate multidimensional trajectories against analytical or independently established reference cases.
 - [ ] Develop the double-slit computational benchmark.
 
