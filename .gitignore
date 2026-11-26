@@ -13,3 +13,5 @@ build/
 .idea/
 .vscode/
 .env
+# Generated example outputs
+examples/output/
